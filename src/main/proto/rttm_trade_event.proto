@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.pms.rttm.proto;
+
+option java_package = "com.pms.rttm.proto";
+option java_multiple_files = true;
+
+message RttmTradeEvent {
+  string trade_id = 1;
+  string service_name = 2;
+  string event_type = 3;
+  string event_stage = 4;
+  string event_status = 5;
+  string source_queue = 6;
+  string target_queue = 7;
+  string topic_name = 8;
+  string consumer_group = 9;
+  int32 partition_id = 10;
+  int64 offset_value = 11;
+  int64 event_time = 12;
+  string message = 13;
+}

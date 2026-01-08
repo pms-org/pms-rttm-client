@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.pms.rttm.proto;
+
+option java_package = "com.pms.rttm.proto";
+option java_multiple_files = true;
+
+message RttmDlqEvent {
+  string trade_id = 1;
+  string service_name = 2;
+  string topic_name = 3;
+  string original_topic = 4;
+  string reason = 5;
+  string event_stage = 6;
+  int64 event_time = 7;
+}

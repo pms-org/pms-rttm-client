@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.pms.lifecycle;
+
+option java_package = "com.pms.lifecycle.proto";
+option java_outer_classname = "LifecycleEventProto";
+
+message LifecycleEvent {
+  string trace_id = 1;
+  string portfolio_id = 2;
+  string stage = 3;
+  string status = 4;
+  int64 timestamp = 5;
+  string details = 6;
+  string service_name = 7;
+  string queue_name = 8;
+  
+  enum Stage {
+    RECEIVED = 0;
+    VALIDATED = 1;
+    ENRICHED = 2;
+    COMMITTED = 3;
+    ANALYZED = 4;
+  }
+  
+  enum Status {
+    SUCCESS = 0;
+    FAILED = 1;
+    PROCESSING = 2;
+  }
+}

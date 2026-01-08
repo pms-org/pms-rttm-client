@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.pms.rttm.proto;
+
+option java_package = "com.pms.rttm.proto";
+option java_multiple_files = true;
+
+message RttmErrorEvent {
+  string trade_id = 1;
+  string service_name = 2;
+  string error_type = 3;
+  string error_message = 4;
+  int64 event_time = 5;
+}
