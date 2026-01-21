@@ -1,16 +1,16 @@
 spring:
+  application:
+    name: kafka-common
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
-      acks: all
-      retries: 3
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+      retries: ${KAFKA_PRODUCER_RETRIES:3}
     consumer:
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
-      group-id: pms-consumer-group
-      auto-offset-reset: earliest
-      enable-auto-commit: false
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:pms-consumer-group}
+      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
     listener:
-      ack-mode: manual_immediate
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual_immediate}
