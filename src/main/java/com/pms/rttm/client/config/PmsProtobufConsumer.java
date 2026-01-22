@@ -1,4 +1,4 @@
-package com.pms.kafka.consumer;
+package com.pms.rttm.client.config;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Parser;
@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class PmsProtobufConsumer {
-    
+
     private static final Logger log = LoggerFactory.getLogger(PmsProtobufConsumer.class);
 
     protected <T> T parseMessage(byte[] data, Parser<T> parser) throws InvalidProtocolBufferException {

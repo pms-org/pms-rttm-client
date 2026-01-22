@@ -16,7 +16,7 @@ A shared Maven dependency for standardized Kafka communication using Protobuf ac
 ```xml
 <dependency>
     <groupId>com.pms</groupId>
-    <artifactId>pms-kafka-protobuf-lib</artifactId>
+    <artifactId>pms-rttm-client</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -72,23 +72,5 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
-      group-id: your-service-group
 ```
-
-## Available Message Types
-
-- `RttmTradeEvent` - Trade lifecycle events
-- `RttmDlqEvent` - Dead letter queue events
-- `RttmErrorEvent` - Error events
-- `RttmQueueMetric` - Queue metrics
-- `LifecycleEvent` - Portfolio lifecycle events
-
-## Installation
-
-1. Clone and build the library:
-```bash
-mvn clean install
-```
-
 2. The library will be available in your local Maven repository for use in other projects.
