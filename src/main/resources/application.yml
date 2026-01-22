@@ -14,3 +14,20 @@ spring:
       enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
     listener:
       ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual_immediate}
+
+rttm:
+  client:
+    # mode: kafka | http | noop
+    mode: kafka
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      topics:
+        trade-events: rttm.trade.events
+        dlq-events: rttm.dlq.events
+        queue-metrics: rttm.queue.metrics
+        error-events: rttm.error.events
+    # send timeout in milliseconds for synchronous sends
+    send-timeout-ms: 3000
+    retry:
+      max-attempts: 3
+      backoff-ms: 100

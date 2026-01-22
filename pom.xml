@@ -43,13 +43,10 @@
 			<artifactId>spring-boot-starter-kafka</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.kafka</groupId>
-			<artifactId>spring-kafka</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>${protobuf.version}</version>
+			<!-- <version>${protobuf.version}</version> -->
+			<version>3.25.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -87,6 +84,12 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-protobuf-serializer</artifactId>
+			<version>7.5.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<distributionManagement>
@@ -99,6 +102,14 @@
 			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
+
+	<repositories>
+		<repository>
+			<id>confluent</id>
+			<name>Confluent Maven Repository</name>
+			<url>https://packages.confluent.io/maven/</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>
@@ -125,7 +136,7 @@
 				<version>${protobuf-maven-plugin.version}</version>
 				<configuration>
 					<protocArtifact>
-						com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+						com.google.protobuf:protoc:3.25.5:exe:${os.detected.classifier}</protocArtifact>
 				</configuration>
 				<executions>
 					<execution>

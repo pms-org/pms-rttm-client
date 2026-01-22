@@ -1,4 +1,4 @@
-package com.pms.kafka.producer;
+package com.pms.rttm.client.config;
 
 import com.google.protobuf.MessageLite;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -6,18 +6,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PmsProtobufProducer {
-    
-    private final KafkaTemplate<String, byte[]> kafkaTemplate;
 
-    public PmsProtobufProducer(KafkaTemplate<String, byte[]> kafkaTemplate) {
+    private final KafkaTemplate<String, MessageLite> kafkaTemplate;
+
+    public PmsProtobufProducer(KafkaTemplate<String, MessageLite> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
     public void sendEvent(String topic, MessageLite event) {
-        kafkaTemplate.send(topic, event.toByteArray());
+        kafkaTemplate.send(topic, event);
     }
 
     public void sendEvent(String topic, String key, MessageLite event) {
-        kafkaTemplate.send(topic, key, event.toByteArray());
+        kafkaTemplate.send(topic, key, event);
     }
 }
