@@ -1,5 +1,7 @@
 package com.pms.rttm.client.dto;
 
+import com.pms.rttm.client.enums.EventStage;
+import com.pms.rttm.client.enums.EventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -21,8 +23,8 @@ public class TradeEventPayload {
     @NonNull
     private String serviceName;
 
-    private String eventType;
-    private String eventStage;
+    private EventType eventType;
+    private EventStage eventStage;
     private String eventStatus;
     private String sourceQueue;
     private String targetQueue;

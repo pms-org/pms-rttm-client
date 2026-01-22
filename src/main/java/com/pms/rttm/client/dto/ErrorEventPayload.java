@@ -1,5 +1,6 @@
 package com.pms.rttm.client.dto;
 
+import com.pms.rttm.client.enums.EventStage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,7 @@ public class ErrorEventPayload {
 
     private String errorMessage;
 
-    private String eventStage;
+    private EventStage eventStage;
 
     @Builder.Default
     private long eventTime = System.currentTimeMillis();

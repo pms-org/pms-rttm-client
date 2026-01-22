@@ -3,6 +3,8 @@ package com.pms.rttm.client.util;
 import com.pms.rttm.client.dto.DlqEventPayload;
 import com.pms.rttm.client.dto.ErrorEventPayload;
 import com.pms.rttm.client.dto.TradeEventPayload;
+import com.pms.rttm.client.enums.EventStage;
+import com.pms.rttm.client.enums.EventType;
 import com.pms.rttm.proto.RttmTradeEvent;
 import org.junit.jupiter.api.Test;
 
@@ -16,8 +18,8 @@ class ProtoConverterTest {
         TradeEventPayload payload = TradeEventPayload.builder()
                 .tradeId("T-123")
                 .serviceName("validation-service")
-                .eventType("VALIDATION")
-                .eventStage("RECEIVED")
+                .eventType(EventType.TRADE_VALIDATED)
+                .eventStage(EventStage.VALIDATED)
                 .eventStatus("OK")
                 .sourceQueue("inbound")
                 .targetQueue("processed")
@@ -92,5 +94,46 @@ class ProtoConverterTest {
         assertNotNull(proto.getTradeId());
         assertNotNull(proto.getServiceName());
         assertEquals(1700000000L, proto.getEventTime());
+    }
+
+    @Test
+    void enumConversionHandlesEventTypeCorrectly() {
+        TradeEventPayload payload = TradeEventPayload.builder()
+                .tradeId("T-enum-test")
+                .serviceName("test-service")
+                .eventType(EventType.TRADE_ENRICHED)
+                .eventStage(EventStage.ENRICHED)
+                .build();
+
+        RttmTradeEvent proto = ProtoConverter.toProto(payload);
+
+        assertEquals("TRADE_ENRICHED", proto.getEventType());
+        assertEquals("ENRICHED", proto.getEventStage());
+    }
+
+    @Test
+    void enumConversionHandlesEventStageInDlqEvent() {
+        DlqEventPayload payload = DlqEventPayload.builder()
+                .tradeId("T-dlq-enum")
+                .serviceName("test-service")
+                .eventStage(EventStage.CONSUME)
+                .build();
+
+        var proto = ProtoConverter.toProto(payload);
+
+        assertEquals("CONSUME", proto.getEventStage());
+    }
+
+    @Test
+    void enumConversionHandlesEventStageInErrorEvent() {
+        ErrorEventPayload payload = ErrorEventPayload.builder()
+                .serviceName("test-service")
+                .errorType("VALIDATION")
+                .eventStage(EventStage.VALIDATE)
+                .build();
+
+        var proto = ProtoConverter.toProto(payload);
+
+        assertEquals("VALIDATE", proto.getEventStage());
     }
 }

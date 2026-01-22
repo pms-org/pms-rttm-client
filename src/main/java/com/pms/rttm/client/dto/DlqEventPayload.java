@@ -1,5 +1,6 @@
 package com.pms.rttm.client.dto;
 
+import com.pms.rttm.client.enums.EventStage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,7 +29,7 @@ public class DlqEventPayload {
     private long eventTime = System.currentTimeMillis();
 
     private String reason;
-    private String eventStage;
+    private EventStage eventStage;
 
     public void setReason(String reason) {
         if (reason != null && reason.length() > 1000) {

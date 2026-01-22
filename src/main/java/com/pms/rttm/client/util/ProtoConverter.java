@@ -5,16 +5,18 @@ import com.pms.rttm.client.dto.DlqEventPayload;
 import com.pms.rttm.client.dto.ErrorEventPayload;
 import com.pms.rttm.client.dto.QueueMetricPayload;
 import com.pms.rttm.client.dto.TradeEventPayload;
+import com.pms.rttm.client.enums.EventStage;
+import com.pms.rttm.client.enums.EventType;
 import com.pms.rttm.proto.RttmDlqEvent;
 import com.pms.rttm.proto.RttmErrorEvent;
 import com.pms.rttm.proto.RttmQueueMetric;
 import com.pms.rttm.proto.RttmTradeEvent;
-import lombok.experimental.UtilityClass;
 
 /**
  * Utility class for converting between DTOs and Protobuf messages.
+ * Handles enum conversions between Java enums and protobuf string
+ * representations.
  */
-@UtilityClass
 public class ProtoConverter {
 
     // TradeEvent conversions
@@ -28,10 +30,10 @@ public class ProtoConverter {
             builder.setServiceName(payload.getServiceName());
         }
         if (payload.getEventType() != null) {
-            builder.setEventType(payload.getEventType());
+            builder.setEventType(payload.getEventType().name());
         }
         if (payload.getEventStage() != null) {
-            builder.setEventStage(payload.getEventStage());
+            builder.setEventStage(payload.getEventStage().name());
         }
         if (payload.getEventStatus() != null) {
             builder.setEventStatus(payload.getEventStatus());
@@ -63,11 +65,29 @@ public class ProtoConverter {
     }
 
     public static TradeEventPayload fromProto(RttmTradeEvent proto) {
+        EventType eventType = null;
+        if (!proto.getEventType().isEmpty()) {
+            try {
+                eventType = EventType.valueOf(proto.getEventType());
+            } catch (IllegalArgumentException e) {
+                // Log and skip invalid enum value
+            }
+        }
+
+        EventStage eventStage = null;
+        if (!proto.getEventStage().isEmpty()) {
+            try {
+                eventStage = EventStage.valueOf(proto.getEventStage());
+            } catch (IllegalArgumentException e) {
+                // Log and skip invalid enum value
+            }
+        }
+
         return TradeEventPayload.builder()
                 .tradeId(proto.getTradeId())
                 .serviceName(proto.getServiceName())
-                .eventType(proto.getEventType())
-                .eventStage(proto.getEventStage())
+                .eventType(eventType)
+                .eventStage(eventStage)
                 .eventStatus(proto.getEventStatus())
                 .sourceQueue(proto.getSourceQueue())
                 .targetQueue(proto.getTargetQueue())
@@ -105,7 +125,7 @@ public class ProtoConverter {
             builder.setReason(payload.getReason());
         }
         if (payload.getEventStage() != null) {
-            builder.setEventStage(payload.getEventStage());
+            builder.setEventStage(payload.getEventStage().name());
         }
         builder.setEventTime(payload.getEventTime());
 
@@ -113,13 +133,22 @@ public class ProtoConverter {
     }
 
     public static DlqEventPayload fromProto(RttmDlqEvent proto) {
+        EventStage eventStage = null;
+        if (!proto.getEventStage().isEmpty()) {
+            try {
+                eventStage = EventStage.valueOf(proto.getEventStage());
+            } catch (IllegalArgumentException e) {
+                // Log and skip invalid enum value
+            }
+        }
+
         return DlqEventPayload.builder()
                 .tradeId(proto.getTradeId())
                 .serviceName(proto.getServiceName())
                 .topicName(proto.getTopicName())
                 .originalTopic(proto.getOriginalTopic())
                 .reason(proto.getReason())
-                .eventStage(proto.getEventStage())
+                .eventStage(eventStage)
                 .eventTime(proto.getEventTime())
                 .build();
     }
@@ -192,7 +221,7 @@ public class ProtoConverter {
             builder.setErrorMessage(payload.getErrorMessage());
         }
         if (payload.getEventStage() != null) {
-            builder.setEventStage(payload.getEventStage());
+            builder.setEventStage(payload.getEventStage().name());
         }
         builder.setEventTime(payload.getEventTime());
 
@@ -200,12 +229,21 @@ public class ProtoConverter {
     }
 
     public static ErrorEventPayload fromProto(RttmErrorEvent proto) {
+        EventStage eventStage = null;
+        if (!proto.getEventStage().isEmpty()) {
+            try {
+                eventStage = EventStage.valueOf(proto.getEventStage());
+            } catch (IllegalArgumentException e) {
+                // Log and skip invalid enum value
+            }
+        }
+
         return ErrorEventPayload.builder()
                 .tradeId(proto.getTradeId())
                 .serviceName(proto.getServiceName())
                 .errorType(proto.getErrorType())
                 .errorMessage(proto.getErrorMessage())
-                .eventStage(proto.getEventStage())
+                .eventStage(eventStage)
                 .eventTime(proto.getEventTime())
                 .build();
     }

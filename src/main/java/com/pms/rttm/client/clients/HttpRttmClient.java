@@ -6,7 +6,6 @@ import com.pms.rttm.client.dto.QueueMetricPayload;
 import com.pms.rttm.client.dto.TradeEventPayload;
 import com.pms.rttm.client.exception.RttmClientException;
 import com.pms.rttm.client.util.ProtoConverter;
-import com.pms.rttm.client.config.RttmClient;
 import com.pms.rttm.client.config.RttmClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

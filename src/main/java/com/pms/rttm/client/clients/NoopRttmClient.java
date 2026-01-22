@@ -1,6 +1,5 @@
 package com.pms.rttm.client.clients;
 
-import com.pms.rttm.client.config.RttmClient;
 import com.pms.rttm.client.dto.DlqEventPayload;
 import com.pms.rttm.client.dto.ErrorEventPayload;
 import com.pms.rttm.client.dto.QueueMetricPayload;

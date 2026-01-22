@@ -1,4 +1,4 @@
-package com.pms.rttm.client.config;
+package com.pms.rttm.client.clients;
 
 import com.pms.rttm.client.dto.DlqEventPayload;
 import com.pms.rttm.client.dto.ErrorEventPayload;
@@ -9,7 +9,7 @@ import com.pms.rttm.client.exception.RttmClientException;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Main interface for RTTM (Real-Time Telemetry & Metrics) client.
+ * Main interface for RTTM (Real-Time Telemetry &amp; Metrics) client.
  * Provides methods to send various types of observability events to the RTTM
  * layer.
  */
