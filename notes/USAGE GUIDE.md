@@ -142,12 +142,15 @@ RttmClient rttmClient = new NoopRttmClient();
 Typical payloads with sample values when invoked from a service (e.g., `pms-validation`):
 
 ```java
+import com.pms.rttm.client.enums.EventStage;
+import com.pms.rttm.client.enums.EventType;
+
 // Trade event (happy path)
 rttmClient.sendTradeEvent(TradeEventPayload.builder()
         .tradeId("TR-20250101-0001")
         .serviceName("pms-validation")
-        .eventType("VALIDATION")
-        .eventStage("RECEIVED")
+        .eventType(EventType.TRADE_VALIDATED)
+        .eventStage(EventStage.VALIDATED)
         .eventStatus("OK")
         .sourceQueue("pms.validation.in")
         .targetQueue("pms.validation.out")
@@ -162,9 +165,9 @@ rttmClient.sendTradeEvent(TradeEventPayload.builder()
 rttmClient.sendErrorEvent(ErrorEventPayload.builder()
         .tradeId("TR-20250101-0002")
         .serviceName("pms-validation")
-        .errorType("VALIDATION")
+        .errorType("VALIDATION_ERROR")
         .errorMessage("Missing notional field")
-        .eventStage("VALIDATE")
+        .eventStage(EventStage.VALIDATE)
         .build());
 
 // DLQ event (processing failure)
@@ -174,7 +177,7 @@ rttmClient.sendDlqEvent(DlqEventPayload.builder()
         .topicName("rttm.dlq.events")
         .originalTopic("pms.validation.in")
         .reason("Deserialization error")
-        .eventStage("CONSUME")
+        .eventStage(EventStage.CONSUME)
         .build());
 
 // Queue metric (snapshot)
@@ -189,6 +192,7 @@ rttmClient.sendQueueMetric(QueueMetricPayload.builder()
 ```
 
 Notes:
+- `EventType` and `EventStage` enums provide type-safe event classification (e.g., `TRADE_VALIDATED`, `ENRICHED`, `VALIDATE`, `CONSUME`).
 - All long text fields (message/reason/errorMessage) are auto-truncated to 1000 chars by the DTOs.
 - `eventTime`/`snapshotTime` default to `System.currentTimeMillis()` unless explicitly set.
 - In Kafka mode, the client uses tradeId or serviceName as keys to keep partitioning stable.
