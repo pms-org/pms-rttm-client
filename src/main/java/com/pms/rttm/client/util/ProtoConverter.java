@@ -9,10 +9,12 @@ import com.pms.rttm.proto.RttmDlqEvent;
 import com.pms.rttm.proto.RttmErrorEvent;
 import com.pms.rttm.proto.RttmQueueMetric;
 import com.pms.rttm.proto.RttmTradeEvent;
+import lombok.experimental.UtilityClass;
 
 /**
  * Utility class for converting between DTOs and Protobuf messages.
  */
+@UtilityClass
 public class ProtoConverter {
 
     // TradeEvent conversions

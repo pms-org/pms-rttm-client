@@ -1,6 +1,7 @@
 package com.pms.rttm.client.config;
 
 import com.google.protobuf.MessageLite;
+import lombok.Getter;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -18,6 +19,7 @@ import java.util.Map;
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer;
 
 @Configuration
+@Getter
 public class PmsKafkaConfig {
 
     // Kafka Bootstrap Servers from application.yml

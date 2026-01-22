@@ -9,12 +9,35 @@
 		<version>4.0.1</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.pms</groupId>
+	<groupId>io.github.pms-org</groupId>
 	<artifactId>pms-rttm-client</artifactId>
 	<version>1.0.0</version>
 	<name>pms-rttm-client</name>
 	<description>PMS Kafka Protobuf Communication Library</description>
-	<url>https://github.com/pms-org/kafka-common</url>
+	<url>https://github.com/pms-org/pms-rttm-client</url>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>sureshvasantha</id>
+			<name>Suresh Raja</name>
+			<email>sureshrbe22@gmail.com</email>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:https://github.com/pms-org/pms-rttm-client.git</connection>
+		<developerConnection>scm:git:git@github.com:pms-org/pms-rttm-client.git</developerConnection>
+		<url>https://github.com/pms-org/pms-rttm-client</url>
+		<tag>HEAD</tag>
+	</scm>
 
 	<properties>
 		<java.version>21</java.version>
