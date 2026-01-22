@@ -1,0 +1,3 @@
+TODO: update Docs `Usage.md` to explain where services can get data from and
+    when to send relevant data.
+TODO: Publish app as mvn package
