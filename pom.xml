@@ -184,7 +184,6 @@
 				<configuration>
 					<publishingServerId>central</publishingServerId>
 					<autoPublish>true</autoPublish>
-					<waitUntil>published</waitUntil>
 				</configuration>
 			</plugin>
 			<plugin>
