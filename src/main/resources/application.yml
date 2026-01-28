@@ -1,8 +1,8 @@
 spring:
   application:
-    name: kafka-common
+    name: pms-rttm-client
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
@@ -14,3 +14,28 @@ spring:
       enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
     listener:
       ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual_immediate}
+
+schema:
+  registry:
+    url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+
+rttm:
+  client:
+    # Mode selection: kafka | http | noop
+    mode: ${RTTM_CLIENT_MODE:kafka}
+    
+    # Kafka configuration
+    kafka-bootstrap-servers: ${RTTM_KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    kafka-topic-trade-events: ${RTTM_KAFKA_TOPIC_TRADE_EVENTS:rttm.trade.events}
+    kafka-topic-dlq-events: ${RTTM_KAFKA_TOPIC_DLQ_EVENTS:rttm.dlq.events}
+    kafka-topic-queue-metrics: ${RTTM_KAFKA_TOPIC_QUEUE_METRICS:rttm.queue.metrics}
+    kafka-topic-error-events: ${RTTM_KAFKA_TOPIC_ERROR_EVENTS:rttm.error.events}
+    
+    # HTTP configuration
+    http-endpoint-base-url: ${RTTM_HTTP_ENDPOINT_BASE_URL:http://localhost:8085}
+    http-api-key: ${RTTM_HTTP_API_KEY:}
+    
+    # Timeout and retry configuration
+    send-timeout-ms: ${RTTM_SEND_TIMEOUT_MS:3000}
+    retry-max-attempts: ${RTTM_RETRY_MAX_ATTEMPTS:3}
+    retry-backoff-ms: ${RTTM_RETRY_BACKOFF_MS:100}

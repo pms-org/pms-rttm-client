@@ -10,5 +10,6 @@ message RttmErrorEvent {
   string service_name = 2;
   string error_type = 3;
   string error_message = 4;
-  int64 event_time = 5;
+  string event_stage = 5;
+  int64 event_time = 6;
 }

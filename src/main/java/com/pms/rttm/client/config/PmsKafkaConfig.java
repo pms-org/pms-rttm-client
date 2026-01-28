@@ -1,9 +1,10 @@
-package com.pms.kafka.config;
+package com.pms.rttm.client.config;
 
+import com.google.protobuf.MessageLite;
+import lombok.Getter;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +16,10 @@ import org.springframework.kafka.listener.ContainerProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer;
 
 @Configuration
+@Getter
 public class PmsKafkaConfig {
 
     // Kafka Bootstrap Servers from application.yml
@@ -44,19 +47,29 @@ public class PmsKafkaConfig {
     @Value("${spring.kafka.listener.ack-mode}")
     private String ackMode;
 
+    // Schema Registry URL from application.yml
+    @Value("${schema.registry.url}")
+    private String schemaRegistryUrl;
+
     @Bean
-    public ProducerFactory<String, byte[]> producerFactory() {
+    public ProducerFactory<String, MessageLite> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        // Use Kafka Protobuf serializer for values; keep as classname string to avoid
+        // compile-time
+        // dependency on Confluent serializer. The runtime must provide the serializer
+        // on the classpath.
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaProtobufSerializer.class);
         props.put(ProducerConfig.ACKS_CONFIG, producerAcks);
         props.put(ProducerConfig.RETRIES_CONFIG, producerRetries);
+        // Schema Registry URL required by Confluent Protobuf Serializer
+        props.put("schema.registry.url", schemaRegistryUrl);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public KafkaTemplate<String, byte[]> kafkaTemplate() {
+    public KafkaTemplate<String, MessageLite> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
@@ -84,4 +97,5 @@ public class PmsKafkaConfig {
 
         return factory;
     }
+
 }
