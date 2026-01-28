@@ -26,7 +26,7 @@ public class DlqEventPayload {
     private String originalTopic;
 
     @Builder.Default
-    private long eventTime = System.currentTimeMillis();
+    private Long eventTime = System.currentTimeMillis();
 
     private String reason;
     private EventStage eventStage;

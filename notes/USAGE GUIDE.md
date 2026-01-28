@@ -17,6 +17,24 @@ This library sends RTTM protobuf events (trade, DLQ, queue metric, error) over K
 </dependency>
 ```
 
+Maven Central is default for Maven/Gradle. If your organization uses a custom settings.xml or an offline mirror, ensure Maven Central is reachable. If needed, explicitly declare it:
+
+```xml
+<repositories>
+   <repository>
+      <id>central</id>
+      <name>Maven Central</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <releases>
+         <enabled>true</enabled>
+      </releases>
+      <snapshots>
+         <enabled>false</enabled>
+      </snapshots>
+   </repository>
+</repositories>
+```
+
 ## Configuration
 Common environment variables (examples):
 - `KAFKA_BOOTSTRAP_SERVERS` (e.g., `localhost:9092`)

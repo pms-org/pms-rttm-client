@@ -7,11 +7,14 @@ import com.pms.rttm.client.dto.TradeEventPayload;
 import com.pms.rttm.client.exception.RttmClientException;
 import com.pms.rttm.client.util.ProtoConverter;
 import com.pms.rttm.client.config.RttmClientConfig;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.CompletableFuture;
@@ -20,17 +23,15 @@ import java.util.concurrent.CompletableFuture;
  * HTTP-based implementation of RttmClient for services without direct Kafka
  * access. Posts protobuf-encoded events to RTTM HTTP ingestion endpoints.
  */
+@Service
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "rttm.client.mode", havingValue = "http")
 public class HttpRttmClient implements RttmClient {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpRttmClient.class);
 
     private final RestTemplate restTemplate;
     private final RttmClientConfig config;
-
-    public HttpRttmClient(RestTemplate restTemplate, RttmClientConfig config) {
-        this.restTemplate = restTemplate;
-        this.config = config;
-    }
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -149,35 +150,5 @@ public class HttpRttmClient implements RttmClient {
     public void close() {
         logger.info("Closing HttpRttmClient");
         // RestTemplate doesn't need explicit closing
-    }
-
-    // Builder for easy instantiation
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private RestTemplate restTemplate;
-        private RttmClientConfig config;
-
-        public Builder restTemplate(RestTemplate restTemplate) {
-            this.restTemplate = restTemplate;
-            return this;
-        }
-
-        public Builder config(RttmClientConfig config) {
-            this.config = config;
-            return this;
-        }
-
-        public HttpRttmClient build() {
-            if (restTemplate == null) {
-                restTemplate = new RestTemplate();
-            }
-            if (config == null) {
-                throw new IllegalStateException("Config is required");
-            }
-            return new HttpRttmClient(restTemplate, config);
-        }
     }
 }

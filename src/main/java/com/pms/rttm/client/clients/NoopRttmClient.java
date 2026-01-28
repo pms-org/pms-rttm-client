@@ -6,6 +6,8 @@ import com.pms.rttm.client.dto.QueueMetricPayload;
 import com.pms.rttm.client.dto.TradeEventPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -13,6 +15,8 @@ import java.util.concurrent.CompletableFuture;
  * No-operation implementation of RttmClient for development and testing.
  * Logs all method calls at DEBUG level and returns successful futures.
  */
+@Service
+@ConditionalOnProperty(name = "rttm.client.mode", havingValue = "noop")
 public class NoopRttmClient implements RttmClient {
 
     private static final Logger logger = LoggerFactory.getLogger(NoopRttmClient.class);

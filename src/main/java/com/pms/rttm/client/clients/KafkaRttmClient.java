@@ -8,10 +8,12 @@ import com.pms.rttm.client.dto.TradeEventPayload;
 import com.pms.rttm.client.exception.RttmClientException;
 import com.pms.rttm.client.util.ProtoConverter;
 import com.pms.rttm.client.config.RttmClientConfig;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -20,17 +22,14 @@ import java.util.concurrent.TimeUnit;
  * Kafka-based implementation of RttmClient.
  * Publishes events to configured Kafka topics using protobuf serialization.
  */
+@Service
+@RequiredArgsConstructor
 public class KafkaRttmClient implements RttmClient {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaRttmClient.class);
 
     private final KafkaTemplate<String, MessageLite> kafkaTemplate;
     private final RttmClientConfig config;
-
-    public KafkaRttmClient(KafkaTemplate<String, MessageLite> kafkaTemplate, RttmClientConfig config) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.config = config;
-    }
 
     @Override
     public void sendTradeEvent(TradeEventPayload payload) throws RttmClientException {
@@ -196,35 +195,5 @@ public class KafkaRttmClient implements RttmClient {
     public void close() {
         logger.info("Closing KafkaRttmClient");
         // KafkaTemplate doesn't need explicit closing as it's managed by Spring
-    }
-
-    // Builder for easy instantiation
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private KafkaTemplate<String, MessageLite> kafkaTemplate;
-        private RttmClientConfig config;
-
-        public Builder kafkaTemplate(KafkaTemplate<String, MessageLite> kafkaTemplate) {
-            this.kafkaTemplate = kafkaTemplate;
-            return this;
-        }
-
-        public Builder config(RttmClientConfig config) {
-            this.config = config;
-            return this;
-        }
-
-        public KafkaRttmClient build() {
-            if (kafkaTemplate == null) {
-                throw new IllegalStateException("KafkaTemplate is required");
-            }
-            if (config == null) {
-                throw new IllegalStateException("Config is required");
-            }
-            return new KafkaRttmClient(kafkaTemplate, config);
-        }
     }
 }

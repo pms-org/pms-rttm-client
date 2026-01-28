@@ -1,5 +1,8 @@
 package com.pms.rttm.client.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Component
+@ConfigurationProperties(prefix = "rttm.client")
 public class RttmClientConfig {
 
     // Mode selection

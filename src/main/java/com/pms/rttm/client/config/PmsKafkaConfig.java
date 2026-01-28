@@ -47,6 +47,10 @@ public class PmsKafkaConfig {
     @Value("${spring.kafka.listener.ack-mode}")
     private String ackMode;
 
+    // Schema Registry URL from application.yml
+    @Value("${schema.registry.url}")
+    private String schemaRegistryUrl;
+
     @Bean
     public ProducerFactory<String, MessageLite> producerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -59,6 +63,8 @@ public class PmsKafkaConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaProtobufSerializer.class);
         props.put(ProducerConfig.ACKS_CONFIG, producerAcks);
         props.put(ProducerConfig.RETRIES_CONFIG, producerRetries);
+        // Schema Registry URL required by Confluent Protobuf Serializer
+        props.put("schema.registry.url", schemaRegistryUrl);
         return new DefaultKafkaProducerFactory<>(props);
     }
 

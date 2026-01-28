@@ -29,7 +29,7 @@ public class ErrorEventPayload {
     private EventStage eventStage;
 
     @Builder.Default
-    private long eventTime = System.currentTimeMillis();
+    private Long eventTime = System.currentTimeMillis();
 
     public void setErrorMessage(String errorMessage) {
         if (errorMessage != null && errorMessage.length() > 1000) {

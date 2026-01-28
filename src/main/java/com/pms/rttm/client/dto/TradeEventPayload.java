@@ -34,7 +34,7 @@ public class TradeEventPayload {
     private Long offsetValue;
 
     @Builder.Default
-    private long eventTime = System.currentTimeMillis();
+    private Long eventTime = System.currentTimeMillis();
 
     private String message;
 

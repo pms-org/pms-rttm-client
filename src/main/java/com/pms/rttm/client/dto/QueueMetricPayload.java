@@ -27,5 +27,5 @@ public class QueueMetricPayload {
     private String consumerGroup;
 
     @Builder.Default
-    private long snapshotTime = System.currentTimeMillis();
+    private Long snapshotTime = System.currentTimeMillis();
 }

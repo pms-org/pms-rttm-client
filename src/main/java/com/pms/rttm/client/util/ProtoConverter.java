@@ -56,7 +56,8 @@ public class ProtoConverter {
         if (payload.getOffsetValue() != null) {
             builder.setOffsetValue(payload.getOffsetValue());
         }
-        builder.setEventTime(payload.getEventTime());
+        // Use current time if eventTime is null
+        builder.setEventTime(payload.getEventTime() != null ? payload.getEventTime() : System.currentTimeMillis());
         if (payload.getMessage() != null) {
             builder.setMessage(payload.getMessage());
         }
@@ -127,7 +128,8 @@ public class ProtoConverter {
         if (payload.getEventStage() != null) {
             builder.setEventStage(payload.getEventStage().name());
         }
-        builder.setEventTime(payload.getEventTime());
+        // Use current time if eventTime is null
+        builder.setEventTime(payload.getEventTime() != null ? payload.getEventTime() : System.currentTimeMillis());
 
         return builder.build();
     }
@@ -181,7 +183,8 @@ public class ProtoConverter {
         if (payload.getConsumerGroup() != null) {
             builder.setConsumerGroup(payload.getConsumerGroup());
         }
-        builder.setSnapshotTime(payload.getSnapshotTime());
+        // Use current time if snapshotTime is null
+        builder.setSnapshotTime(payload.getSnapshotTime() != null ? payload.getSnapshotTime() : System.currentTimeMillis());
 
         return builder.build();
     }
@@ -223,7 +226,8 @@ public class ProtoConverter {
         if (payload.getEventStage() != null) {
             builder.setEventStage(payload.getEventStage().name());
         }
-        builder.setEventTime(payload.getEventTime());
+        // Use current time if eventTime is null
+        builder.setEventTime(payload.getEventTime() != null ? payload.getEventTime() : System.currentTimeMillis());
 
         return builder.build();
     }
