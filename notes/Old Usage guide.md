@@ -11,9 +11,9 @@ This library sends RTTM protobuf events (trade, DLQ, queue metric, error) over K
 ## Add the dependency
 ```xml
 <dependency>
-    <groupId>com.pms</groupId>
+    <groupId>io.github.pms-orgs</groupId>
     <artifactId>pms-rttm-client</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -156,7 +156,7 @@ rttmClient.sendDlqEvent(DlqEventPayload.builder()
         .topicName("rttm.dlq.events")
         .originalTopic("pms.validation.in")
         .reason("Deserialization error")
-        .eventStage(EventStage.CONSUME)
+        .eventStage(EventStage.CONSUMED)
         .build());
 
 // Queue metric (snapshot)
@@ -171,7 +171,7 @@ rttmClient.sendQueueMetric(QueueMetricPayload.builder()
 ```
 
 Notes:
-- `EventType` and `EventStage` enums provide type-safe event classification (e.g., `TRADE_VALIDATED`, `ENRICHED`, `VALIDATED`, `CONSUME`).
+- `EventType` and `EventStage` enums provide type-safe event classification (e.g., `TRADE_VALIDATED`, `ENRICHED`, `VALIDATED`, `CONSUMED`).
 - All long text fields (message/reason/errorMessage) are auto-truncated to 1000 chars by the DTOs.
 - `eventTime`/`snapshotTime` default to `System.currentTimeMillis()` unless explicitly set.
 - In Kafka mode, the client uses tradeId or serviceName as keys to keep partitioning stable.
