@@ -138,64 +138,298 @@ rttm:
          backoff-ms: ${RTTM_RETRY_BACKOFF_MS:100}
 ```
 
-### HTTP client (when Kafka is unavailable)
-`` Sending Data to Kafklues when invoked from a service (e.g., `pms-validation`):
+## Sending Data to Kafka
 
+### Overview
+The RTTM client provides four types of events to track different aspects of trade processing:
+
+1. **Trade Events** - Track trade lifecycle from ingestion to completion
+2. **Error Events** - Capture validation and processing errors
+3. **DLQ Events** - Record messages sent to dead letter queues
+4. **Queue Metrics** - Monitor Kafka queue health and lag
+
+### 1. Trade Events
+
+**When to send**: At every stage of trade processing (consumed, validated, enriched, persisted, published)
+
+**What to include**: Trade ID, service name, event type/stage, queue information, offsets
+
+**Example - Trade Consumed**:
 ```java
 import com.pms.rttm.client.enums.EventStage;
 import com.pms.rttm.client.enums.EventType;
 
-// Trade event (happy path)
-rttmClient.sendTradeEvent(TradeEventPayload.builder()
-        .tradeId("TR-20250101-0001")
+@KafkaListener(topics = "pms.validation.in", groupId = "pms-validation-cg")
+public void consumeTrade(Trade trade, Acknowledgment ack, 
+                        @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,
+                        @Header(KafkaHeaders.OFFSET) long offset) {
+    // Send trade event - consumed
+    rttmClient.sendTradeEvent(TradeEventPayload.builder()
+        .tradeId(trade.getTradeId())
         .serviceName("pms-validation")
-        .eventType(EventType.TRADE_VALIDATED)
-        .eventStage(EventStage.VALIDATED)
-        .eventStatus("OK")
-        .sourceQueue("pms.validation.in")
-        .targetQueue("pms.validation.out")
-        .topicName("rttm.trade.events")
-        .consumerGroup("pms-validation-cg")
-        .partitionId(0)
-        .offsetValue(12345L)
-        .message("Trade accepted")
-        .build());
-
-// Error event (validation failure)
-rttmClient.sendErrorEvent(ErrorEventPayload.builder()
-        .tradeId("TR-20250101-0002")
-        .serviceName("pms-validation")
-        .errorType("VALIDATION_ERROR")
-        .errorMessage("Missing notional field")
-        .eventStage(EventStage.VALIDATE)
-        .build());
-
-// DLQ event (processing failure)
-rttmClient.sendDlqEvent(DlqEventPayload.builder()
-        .tradeId("TR-20250101-0003")
-        .serviceName("pms-validation")
-        .topicName("rttm.dlq.events")
-        .originalTopic("pms.validation.in")
-        .reason("Deserialization error")
+        .eventType(EventType.TRADE_RECEIVED)
         .eventStage(EventStage.CONSUME)
-        .build());
-
-// Queue metric (snapshot)
-rttmClient.sendQueueMetric(QueueMetricPayload.builder()
-        .serviceName("pms-validation")
+        .eventStatus("RECEIVED")
+        .sourceQueue("pms.ingestion.out")
+        .targetQueue("pms.validation.in")
         .topicName("pms.validation.in")
-        .partitionId(0)
-        .producedOffset(20000L)
-        .consumedOffset(19990L)
         .consumerGroup("pms-validation-cg")
+        .partitionId(partition)
+        .offsetValue(offset)
+        .message("Trade received for validation")
         .build());
+    
+    // Process trade...
+}
 ```
 
-Notes:
-- `EventType` and `EventStage` enums provide type-safe event classification (e.g., `TRADE_VALIDATED`, `ENRICHED`, `VALIDATE`, `CONSUME`).
-- All long text fields (message/reason/errorMessage) are auto-truncated to 1000 chars by the DTOs.
-- `eventTime`/`snapshotTime` default to `System.currentTimeMillis()` unless explicitly set.
-- In Kafka mode, the client uses tradeId or serviceName as keys to keep partitioning stable.
+**Example - Trade Validated Successfully**:
+```java
+public void validateTrade(Trade trade) {
+    try {
+        // Validation logic...
+        ValidationResult result = validator.validate(trade);
+        
+        if (result.isValid()) {
+            // Send trade event - validated
+            rttmClient.sendTradeEvent(TradeEventPayload.builder()
+                .tradeId(trade.getTradeId())
+                .serviceName("pms-validation")
+                .eventType(EventType.TRADE_VALIDATED)
+                .eventStage(EventStage.VALIDATED)
+                .eventStatus("OK")
+                .sourceQueue("pms.validation.in")
+                .targetQueue("pms.enrichment.in")
+                .topicName("pms.enrichment.in")
+                .message("Trade validation successful")
+                .build());
+        }
+    } catch (Exception e) {
+        // Handle error (see Error Events section)
+    }
+}
+```
+
+**Example - Trade Enriched**:
+```java
+rttmClient.sendTradeEvent(TradeEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-enrichment")
+    .eventType(EventType.TRADE_ENRICHED)
+    .eventStage(EventStage.ENRICHED)
+    .eventStatus("ENRICHED")
+    .sourceQueue("pms.enrichment.in")
+    .targetQueue("pms.persistence.in")
+    .message("Trade enriched with reference data")
+    .build());
+```
+
+**Example - Trade Persisted**:
+```java
+rttmClient.sendTradeEvent(TradeEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-persistence")
+    .eventType(EventType.TRADE_PERSISTED)
+    .eventStage(EventStage.PERSISTED)
+    .eventStatus("SAVED")
+    .message("Trade saved to database")
+    .build());
+```
+
+### 2. Error Events
+
+**When to send**: When validation fails, business rule violations occur, or processing errors happen
+
+**What to include**: Trade ID, service name, error type, error message, event stage where error occurred
+
+**Example - Validation Error**:
+```java
+rttmClient.sendErrorEvent(ErrorEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-validation")
+    .errorType("VALIDATION_ERROR")
+    .errorMessage("Validation failed: Missing required field 'notional'")
+    .eventStage(EventStage.VALIDATE)
+    .build());
+```
+
+**Example - Business Rule Violation**:
+```java
+rttmClient.sendErrorEvent(ErrorEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-validation")
+    .errorType("BUSINESS_RULE_VIOLATION")
+    .errorMessage("Notional amount exceeds maximum limit: 10000000 > 5000000")
+    .eventStage(EventStage.VALIDATE)
+    .build());
+```
+
+**Example - Enrichment Failure**:
+```java
+rttmClient.sendErrorEvent(ErrorEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-enrichment")
+    .errorType("REFERENCE_DATA_NOT_FOUND")
+    .errorMessage("Failed to find reference data for counterparty: CP-12345")
+    .eventStage(EventStage.ENRICH)
+    .build());
+```
+
+**Example - Database Error**:
+```java
+rttmClient.sendErrorEvent(ErrorEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-persistence")
+    .errorType("DATABASE_ERROR")
+    .errorMessage("Failed to persist trade: Connection timeout")
+    .eventStage(EventStage.PERSIST)
+    .build());
+```
+
+### 3. DLQ Events
+
+**When to send**: When a message cannot be processed and is sent to a dead letter queue
+
+**What to include**: Trade ID, service name, original topic, DLQ topic, reason for DLQ, event stage
+
+**Example - Deserialization Error**:
+```java
+rttmClient.sendDlqEvent(DlqEventPayload.builder()
+    .tradeId("TR-20250101-0001")
+    .serviceName("pms-validation")
+    .topicName("pms.validation.dlq")
+    .originalTopic("pms.validation.in")
+    .reason("Deserialization error: Unexpected character at position 15")
+    .eventStage(EventStage.CONSUME)
+    .build());
+```
+
+**Example - Max Retry Exceeded**:
+```java
+rttmClient.sendDlqEvent(DlqEventPayload.builder()
+    .tradeId(trade.getTradeId())
+    .serviceName("pms-enrichment")
+    .topicName("pms.enrichment.in.dlq")
+    .originalTopic("pms.enrichment.in")
+    .reason("Max retry attempts exceeded (3 attempts)")
+    .eventStage(EventStage.ENRICH)
+    .build());
+```
+
+**Example - Poison Pill Message**:
+```java
+rttmClient.sendDlqEvent(DlqEventPayload.builder()
+    .tradeId("TR-UNKNOWN")
+    .serviceName("pms-validation")
+    .topicName("pms.validation.dlq")
+    .originalTopic("pms.validation.in")
+    .reason("Poison pill detected - invalid message format")
+    .eventStage(EventStage.CONSUME)
+    .build());
+```
+
+### 4. Queue Metrics
+
+**When to send**: Periodically (every 30 seconds recommended) via scheduled task
+
+**What to include**: Service name, topic name, partition ID, produced offset, consumed offset, consumer group
+
+**Example - Scheduled Metrics Publishing**:
+```java
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.listener.MessageListenerContainer;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.Map;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class QueueMetricsService {
+
+    private final RttmClient rttmClient;
+    private final KafkaListenerEndpointRegistry registry;
+    private final ConsumerFactory<String, ?> consumerFactory;
+
+    /**
+     * Publishes queue metrics every 30 seconds for all active Kafka listeners.
+     */
+    @Scheduled(fixedRate = 30000)
+    public void publishQueueMetrics() {
+        log.debug("Publishing queue metrics snapshot");
+        
+        registry.getListenerContainers().forEach(container -> {
+            try {
+                Collection<TopicPartition> assignedPartitions = container.getAssignedPartitions();
+                
+                if (assignedPartitions != null && !assignedPartitions.isEmpty()) {
+                    Map<String, Object> consumerProps = consumerFactory.getConfigurationProperties();
+                    String consumerGroup = (String) consumerProps.get(ConsumerConfig.GROUP_ID_CONFIG);
+                    
+                    // Create a consumer to fetch offsets
+                    try (Consumer<?, ?> consumer = consumerFactory.createConsumer(consumerGroup, "", "-metrics")) {
+                        assignedPartitions.forEach(tp -> {
+                            try {
+                                // Get end offsets (produced offset)
+                                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(List.of(tp));
+                                Long producedOffset = endOffsets.get(tp);
+                                
+                                // Get committed offset (consumed offset)
+                                Long consumedOffset = consumer.committed(Set.of(tp)).get(tp).offset();
+                                
+                                // Send queue metric
+                                rttmClient.sendQueueMetric(QueueMetricPayload.builder()
+                                    .serviceName("pms-validation")
+                                    .topicName(tp.topic())
+                                    .partitionId(tp.partition())
+                                    .producedOffset(producedOffset != null ? producedOffset : 0L)
+                                    .consumedOffset(consumedOffset != null ? consumedOffset : 0L)
+                                    .consumerGroup(consumerGroup)
+                                    .build());
+                                    
+                                log.debug("Published metric for topic={}, partition={}, lag={}", 
+                                    tp.topic(), tp.partition(), 
+                                    (producedOffset != null ? producedOffset : 0L) - 
+                                    (consumedOffset != null ? consumedOffset : 0L));
+                            } catch (Exception e) {
+                                log.error("Failed to publish metric for {}", tp, e);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error publishing metrics for container {}", 
+                    container.getListenerId(), e);
+            }
+        });
+    }
+}
+```
+
+**Configuration Requirements**:
+```java
+@Configuration
+@EnableScheduling
+public class SchedulingConfig {
+    // @EnableScheduling enables the @Scheduled annotation
+}
+```
+
+### Key Points
+- **EventType** and **EventStage** enums provide type-safe event classification
+- All long text fields (message/reason/errorMessage) are auto-truncated to 1000 chars
+- **eventTime** and **snapshotTime** default to `System.currentTimeMillis()` unless explicitly set
+- The client uses tradeId or serviceName as Kafka keys for stable partitioning
+- Queue metrics should be sent every 30 seconds via scheduler
+- Always send error events before DLQ events for complete tracking
 
 ## Consuming Data from Kafka
 
@@ -204,31 +438,26 @@ To consume RTTM events (e.g., queue metrics) from Kafka topics, use Spring Kafka
 ### Example: Consuming Queue Metrics
 
 ```java
-import com.pms.rttm.proto.RttmQukafka:29092` (Docker) or `localhost:9092` (local).
-   - `pms-rttm` service running and pointing to the same Kafka cluster.
-2. **Configure `pms-validation`**
-   - Include the dependency above.
-   - Set `rttm.client.mode=kafka`.
-   - Set `KAFKA_BOOTSTRAP_SERVERS=kafka:29092` (Docker) or `localhost:9092` (local).
-   - Ensure topics match `pms-rttm`: `rttm.trade.events`, `rttm.dlq.events`, `rttm.queue.metrics`, `rttm.error.events`.
-3. **Trigger events from `pms-validation`**
-   - Send a trade through the normal flow to emit `TradeEventPayload` (expected on `rttm.trade.events`).
-   - Force a validation failure to emit `ErrorEventPayload` and optionally `DlqEventPayload`.
-   - Wait for scheduled queue metric emission (every 30s) or manually trigger to publish to `rttm.queue.metrics`.
-4. **Observe results**
-   - Use `kafka-console-consumer` or Spring `@KafkaListener` to read each topic and confirm payload fields.
-   - Verify message truncation (long message/reason/errorMessage capped at 1000 chars) and timestamps present.
-   - Check queue metric lag calculation (producedOffset - consumedOffset).
-5. **Negative scenarios**
-   - Bring Kafka down and confirm the client surfaces `RttmClientException` within the configured timeout.
-   - Verify retry logic with `max-attempts` and `backoff-ms` configuration
-            log.info("Received queue metric: service={}, topic={}, partition={}, " +
-                     "producedOffset={}, consumedOffset={}, lag={}",
+import com.pms.rttm.proto.RttmQueueMetric;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class QueueMetricConsumer {
+
+    @KafkaListener(
+        topics = "rttm.queue.metrics",
+        groupId = "rttm-consumer-group"
+    )
+    public void consumeQueueMetric(RttmQueueMetric metric, Acknowledgment ack) {
+        try {
+            log.info("Received queue metric: service={}, topic={}, partition={}, lag={}",
                 metric.getServiceName(),
                 metric.getTopicName(),
                 metric.getPartitionId(),
-                metric.getProducedOffset(),
-                metric.getConsumedOffset(),
                 metric.getProducedOffset() - metric.getConsumedOffset());
             
             // Process the metric (store in DB, send alert, etc.)
@@ -313,7 +542,60 @@ Similarly, create listeners for trade, error, and DLQ events:
 ```java
 // Trade events
 @KafkaListener(topics = "rttm.trade.events", groupId = "rttm-consumer-group")
-public void consumeTradeE→ message appears on `rttm.trade.events`.
+public void consumeTradeEvent(RttmTradeEvent event, Acknowledgment ack) {
+    log.info("Received trade event: tradeId={}, eventType={}, eventStage={}", 
+        event.getTradeId(), event.getEventType(), event.getEventStage());
+    // Process trade event
+    ack.acknowledge();
+}
+
+// Error events
+@KafkaListener(topics = "rttm.error.events", groupId = "rttm-consumer-group")
+public void consumeErrorEvent(RttmErrorEvent event, Acknowledgment ack) {
+    log.warn("Received error event: tradeId={}, errorType={}, message={}", 
+        event.getTradeId(), event.getErrorType(), event.getErrorMessage());
+    // Process error event
+    ack.acknowledge();
+}
+
+// DLQ events
+@KafkaListener(topics = "rttm.dlq.events", groupId = "rttm-consumer-group")
+public void consumeDlqEvent(RttmDlqEvent event, Acknowledgment ack) {
+    log.error("Received DLQ event: tradeId={}, originalTopic={}, reason={}", 
+        event.getTradeId(), event.getOriginalTopic(), event.getReason());
+    // Process DLQ event
+    ack.acknowledge();
+}
+```
+
+## Unit Tests
+- Run all tests: `./mvnw test`
+- What is covered: DTO truncation safeguards and proto round-trip conversion in `ProtoConverter`.
+- Add more coverage: mock `KafkaTemplate` or use `spring-kafka-test` embedded broker for send/ack paths; verify retry/backoff configuration where applicable.
+
+## Manual End-to-End Test with `pms-validation`
+1. **Start dependencies**
+   - Kafka broker reachable at `kafka:29092` (Docker) or `localhost:9092` (local).
+   - `pms-rttm` service running and pointing to the same Kafka cluster.
+2. **Configure `pms-validation`**
+   - Include the dependency above.
+   - Set `rttm.client.mode=kafka`.
+   - Set `KAFKA_BOOTSTRAP_SERVERS=kafka:29092` (Docker) or `localhost:9092` (local).
+   - Ensure topics match `pms-rttm`: `rttm.trade.events`, `rttm.dlq.events`, `rttm.queue.metrics`, `rttm.error.events`.
+3. **Trigger events from `pms-validation`**
+   - Send a trade through the normal flow to emit `TradeEventPayload` (expected on `rttm.trade.events`).
+   - Force a validation failure to emit `ErrorEventPayload` and optionally `DlqEventPayload`.
+   - Wait for scheduled queue metric emission (every 30s) or manually trigger to publish to `rttm.queue.metrics`.
+4. **Observe results**
+   - Use `kafka-console-consumer` or Spring `@KafkaListener` to read each topic and confirm payload fields.
+   - Verify message truncation (long message/reason/errorMessage capped at 1000 chars) and timestamps present.
+   - Check queue metric lag calculation (producedOffset - consumedOffset).
+5. **Negative scenarios**
+   - Bring Kafka down and confirm the client surfaces `RttmClientException` within the configured timeout.
+   - Verify retry logic with `max-attempts` and `backoff-ms` configuration.
+
+## Minimal Manual Test Matrix
+- Happy path trade event → message appears on `rttm.trade.events`.
 - Error event from validation failure → message appears on `rttm.error.events` with `errorType` and truncated message.
 - DLQ event when processing fails → message appears on `rttm.dlq.events` with `originalTopic`.
 - Scheduled queue metric (every 30s) → offsets and partition published to `rttm.queue.metrics`.
@@ -325,137 +607,4 @@ public void consumeTradeE→ message appears on `rttm.trade.events`.
 - **Serialization errors**: Compare payloads against proto contracts under `src/main/proto` and confirm required fields are set.
 - **Timeouts**: Raise `send-timeout-ms` and ensure broker address is reachable; check `acks` configuration for sync sends.
 - **Scheduler not running**: Verify `@EnableScheduling` is added to your Spring Boot configuration class.
-- **Consumer not receiving messages**: Check consumer group ID, topic names, and deserializer configuration
-public void consumeDlqEvent(RttmDlqEvent event, Acknowledgment ack) {
-    // Process DLQ event
-}
-```
-
-## Unit tests
-- Run all tests: `./mvnw test`
-- What is covered: DTO truncation safeguards and proto round-trip conversion in `ProtoConverter`.
-- Add more coverage: mock `KafkaTemplate` or use `spring-kafka-test` embedded broker for send/ack paths; verify retry/backoff configuration where applicable.
-
-## Manual end-to-end test with `pms-validation`
-1. **Start dependencies**
-   - Kafka broker reachable at `KAFKA_BOOTSTRAP_SERVERS`.
-   - `pms-rttm` service running and pointing to the same Kafka cluster (or HTTP ingestion endpoint if you choose `http` mode).
-2. **Configure `pms-validation`**
-   - Include the dependency above.
-   - Set `rttm.client.mode=kafka` (or `http`).
-### Key Points
-- `EventType` and `EventStage` enums provide type-safe event classification (e.g., `TRADE_VALIDATED`, `ENRICHED`, `VALIDATE`, `CONSUME`).
-- All long text fields (message/reason/errorMessage) are auto-truncated to 1000 chars by the DTOs.
-- `eventTime`/`snapshotTime` default to `System.currentTimeMillis()` unless explicitly set.
-- The client uses tradeId or serviceName as Kafka keys to keep partitioning stable.
-
-### Scheduled Queue Metrics Publishing
-
-To automatically send queue metrics every 30 seconds, use Spring's `@Scheduled` annotation. Example from `pms-validation`:
-
-```java
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.TopicPartition;
-import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.listener.MessageListenerContainer;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class QueueMetricsService {
-
-    private final RttmClient rttmClient;
-    private final KafkaListenerEndpointRegistry registry;
-    private final ConsumerFactory<String, ?> consumerFactory;
-
-    /**
-     * Publishes queue metrics every 30 seconds for all active Kafka listeners.
-     */
-    @Scheduled(fixedRate = 30000)
-    public void publishQueueMetrics() {
-        log.debug("Publishing queue metrics snapshot");
-        
-        registry.getListenerContainers().forEach(container -> {
-            try {
-                String listenerId = container.getListenerId();
-                Collection<TopicPartition> assignedPartitions = container.getAssignedPartitions();
-                
-                if (assignedPartitions != null && !assignedPartitions.isEmpty()) {
-                    Map<String, Object> consumerProps = consumerFactory.getConfigurationProperties();
-                    String consumerGroup = (String) consumerProps.get(ConsumerConfig.GROUP_ID_CONFIG);
-                    
-                    assignedPartitions.forEach(tp -> {
-                        try {
-                            // Get end offset (produced offset)
-                            Long endOffset = container.getContainerProperties()
-                                .getConsumerRebalanceListener() != null 
-                                ? getEndOffset(tp) : null;
-                            
-                            // Get committed offset (consumed offset)
-                            Long committedOffset = getCommittedOffset(container, tp);
-                            
-                            rttmClient.sendQueueMetric(QueueMetricPayload.builder()
-                                .serviceName("pms-validation")
-                                .topicName(tp.topic())
-                                .partitionId(tp.partition())
-                                .producedOffset(endOffset != null ? endOffset : 0L)
-                                .consumedOffset(committedOffset != null ? committedOffset : 0L)
-                                .consumerGroup(consumerGroup)
-                                .build());
-                                
-                            log.debug("Published metric for topic={}, partition={}", 
-                                tp.topic(), tp.partition());
-                        } catch (Exception e) {
-                            log.error("Failed to publish metric for {}", tp, e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                log.error("Error publishing metrics for container {}", 
-                    container.getListenerId(), e);
-            }
-        });
-    }
-    
-    private Long getEndOffset(TopicPartition tp) {
-        // Implementation to fetch end offset from Kafka admin/consumer
-        return null; // Replace with actual implementation
-    }
-    
-    private Long getCommittedOffset(MessageListenerContainer container, TopicPartition tp) {
-        // Implementation to fetch committed offset
-        return null; // Replace with actual implementation
-    }
-}
-```
-
-**Configuration Requirements:**
-- Enable scheduling in your Spring Boot application with `@EnableScheduling` on a configuration class
-- The `fixedRate = 30000` means execution every 30 seconds (30,000 milliseconds)
-- Adjust the rate based on your monitoring needs
-4. **Observe results**
-   - Kafka mode: use `kafka-console-consumer` (or Spring `@KafkaListener` in a test app) to read each topic and confirm payload fields.
-   - HTTP mode: check `pms-rttm` ingress logs/metrics or its persistence layer for received events.
-   - Verify message truncation (long message/reason/errorMessage capped at 1000 chars) and timestamps present.
-5. **Negative scenarios**
-   - Bring Kafka down and confirm the client surfaces `RttmClientException` within the configured timeout.
-   - Provide invalid API key in HTTP mode and confirm 401/403 surfaced to the caller.
-
-## Minimal manual test matrix
-- Happy path trade event in Kafka mode → message appears on `rttm.trade.events`.
-- Error event from validation failure → message appears on `rttm.error.events` with `errorType` and truncated message.
-- DLQ event when processing fails → message appears on `rttm.dlq.events` with `originalTopic`.
-- Queue metric snapshot → offsets and partition published to `rttm.queue.metrics`.
-- HTTP mode smoke test → POST succeeds (2xx) and RTTM receives payload.
-- No-op mode → methods return without throwing; only debug logs emitted.
-
-## Troubleshooting
-- Missing protobuf serializer: ensure `io.confluent:kafka-protobuf-serializer` is on the runtime classpath.
-- Serialization errors: compare payloads against proto contracts under `src/main/proto` and confirm required fields are set.
-- Timeouts: raise `send-timeout-ms` and ensure broker address is reachable; check `acks` configuration for sync sends.
-- HTTP failures: confirm `base-url` and `X-API-Key` headers; inspect server logs for validation errors.
+- **Consumer not receiving messages**: Check consumer group ID, topic names, and deserializer configuration.
