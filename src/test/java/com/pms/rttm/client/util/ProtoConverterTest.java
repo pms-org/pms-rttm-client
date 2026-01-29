@@ -121,7 +121,7 @@ class ProtoConverterTest {
 
         var proto = ProtoConverter.toProto(payload);
 
-        assertEquals("CONSUME", proto.getEventStage());
+        assertEquals("RECEIVED", proto.getEventStage());
     }
 
     @Test
