@@ -7,6 +7,8 @@ import com.pms.rttm.client.dto.TradeEventPayload;
 import com.pms.rttm.client.exception.RttmClientException;
 import com.pms.rttm.client.util.ProtoConverter;
 import com.pms.rttm.client.config.RttmClientConfig;
+
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
  * access. Posts protobuf-encoded events to RTTM HTTP ingestion endpoints.
  */
 @Service
+@Builder
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "rttm.client.mode", havingValue = "http")
 public class HttpRttmClient implements RttmClient {

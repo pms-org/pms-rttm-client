@@ -8,6 +8,7 @@ import com.pms.rttm.client.dto.TradeEventPayload;
 import com.pms.rttm.client.exception.RttmClientException;
 import com.pms.rttm.client.util.ProtoConverter;
 import com.pms.rttm.client.config.RttmClientConfig;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  * Publishes events to configured Kafka topics using protobuf serialization.
  */
 @Service
+@Builder
 @RequiredArgsConstructor
 public class KafkaRttmClient implements RttmClient {
 

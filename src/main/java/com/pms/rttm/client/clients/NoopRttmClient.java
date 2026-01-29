@@ -4,6 +4,9 @@ import com.pms.rttm.client.dto.DlqEventPayload;
 import com.pms.rttm.client.dto.ErrorEventPayload;
 import com.pms.rttm.client.dto.QueueMetricPayload;
 import com.pms.rttm.client.dto.TradeEventPayload;
+
+import lombok.Builder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
  * Logs all method calls at DEBUG level and returns successful futures.
  */
 @Service
+@Builder
 @ConditionalOnProperty(name = "rttm.client.mode", havingValue = "noop")
 public class NoopRttmClient implements RttmClient {
 
