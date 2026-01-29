@@ -116,7 +116,7 @@ class ProtoConverterTest {
         DlqEventPayload payload = DlqEventPayload.builder()
                 .tradeId("T-dlq-enum")
                 .serviceName("test-service")
-                .eventStage(EventStage.CONSUME)
+                .eventStage(EventStage.RECEIVED)
                 .build();
 
         var proto = ProtoConverter.toProto(payload);
@@ -129,11 +129,11 @@ class ProtoConverterTest {
         ErrorEventPayload payload = ErrorEventPayload.builder()
                 .serviceName("test-service")
                 .errorType("VALIDATION")
-                .eventStage(EventStage.VALIDATE)
+                .eventStage(EventStage.VALIDATED)
                 .build();
 
         var proto = ProtoConverter.toProto(payload);
 
-        assertEquals("VALIDATE", proto.getEventStage());
+        assertEquals("VALIDATED", proto.getEventStage());
     }
 }

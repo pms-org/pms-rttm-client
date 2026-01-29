@@ -9,6 +9,4 @@ public enum EventStage {
     ENRICHED, // reference data / pricing enrichment done
     COMMITTED, // persisted to core system / ledger
     ANALYZED, // downstream analytics / risk / reporting
-    CONSUME, // message consumed from queue
-    VALIDATE // validation in progress
 }

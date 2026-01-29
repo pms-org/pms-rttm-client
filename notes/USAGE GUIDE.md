@@ -249,7 +249,7 @@ rttmClient.sendErrorEvent(ErrorEventPayload.builder()
     .serviceName("pms-validation")
     .errorType("VALIDATION_ERROR")
     .errorMessage("Validation failed: Missing required field 'notional'")
-    .eventStage(EventStage.VALIDATE)
+    .eventStage(EventStage.VALIDATED)
     .build());
 ```
 
@@ -260,7 +260,7 @@ rttmClient.sendErrorEvent(ErrorEventPayload.builder()
     .serviceName("pms-validation")
     .errorType("BUSINESS_RULE_VIOLATION")
     .errorMessage("Notional amount exceeds maximum limit: 10000000 > 5000000")
-    .eventStage(EventStage.VALIDATE)
+    .eventStage(EventStage.VALIDATED)
     .build());
 ```
 

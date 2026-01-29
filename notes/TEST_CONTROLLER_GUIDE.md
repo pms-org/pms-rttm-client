@@ -653,5 +653,3 @@ curl -X POST "http://localhost:8080/api/test/batch-trade-events?count=1000&servi
 - `ENRICHED`
 - `COMMITTED`
 - `ANALYZED`
-- `CONSUME`
-- `VALIDATE`
