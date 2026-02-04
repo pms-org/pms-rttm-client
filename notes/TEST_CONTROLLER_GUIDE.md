@@ -112,24 +112,6 @@ The test controller provides the following endpoints:
 }
 ```
 
-#### Analyzed Trade
-```json
-{
-  "tradeId": "TRADE-2026-0005",
-  "serviceName": "trade-analytics-service",
-  "eventType": "TRADE_ANALYZED",
-  "eventStage": "ANALYZED",
-  "eventStatus": "SUCCESS",
-  "sourceQueue": "analytics-queue",
-  "targetQueue": null,
-  "topicName": "pms.trade.events",
-  "consumerGroup": "analytics-processor-group",
-  "partitionId": 1,
-  "offsetValue": 56789,
-  "message": "Trade analytics completed - risk metrics and reporting updated"
-}
-```
-
 #### Rejected Trade
 ```json
 {
@@ -248,7 +230,7 @@ The test controller provides the following endpoints:
   "serviceName": "trade-analytics-service",
   "errorType": "KAFKA_CONSUMER_ERROR",
   "errorMessage": "Offset commit failed: Broker not available - rebalancing consumer group",
-  "eventStage": "ANALYZED"
+  "eventStage": "COMMITTED"
 }
 ```
 
@@ -555,20 +537,6 @@ curl -X POST http://localhost:8080/api/test/trade-event \
   }'
 ```
 
-5. **Analyzed**
-```bash
-curl -X POST http://localhost:8080/api/test/trade-event \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tradeId": "TRADE-LIFECYCLE-001",
-    "serviceName": "trade-analytics-service",
-    "eventType": "TRADE_ANALYZED",
-    "eventStage": "ANALYZED",
-    "eventStatus": "SUCCESS",
-    "message": "Trade analytics completed"
-  }'
-```
-
 ### Scenario 2: Error Flow with DLQ
 Simulate an error that results in DLQ routing:
 
@@ -642,7 +610,6 @@ curl -X POST "http://localhost:8080/api/test/batch-trade-events?count=1000&servi
 - `TRADE_VALIDATED`
 - `TRADE_ENRICHED`
 - `TRADE_COMMITTED`
-- `TRADE_ANALYZED`
 - `TRADE_REJECTED`
 - `TRADE_FAILED`
 - `TRADE_SENT_TO_DLQ`
@@ -652,4 +619,3 @@ curl -X POST "http://localhost:8080/api/test/batch-trade-events?count=1000&servi
 - `VALIDATED`
 - `ENRICHED`
 - `COMMITTED`
-- `ANALYZED`

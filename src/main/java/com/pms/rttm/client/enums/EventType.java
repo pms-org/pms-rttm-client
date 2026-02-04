@@ -8,7 +8,6 @@ public enum EventType {
     TRADE_VALIDATED, // validation successful
     TRADE_ENRICHED, // enrichment completed
     TRADE_COMMITTED, // committed to system of record
-    TRADE_ANALYZED, // analytics completed
     TRADE_REJECTED, // validation failed
     TRADE_FAILED, // processing failure (non-DLQ)
     TRADE_SENT_TO_DLQ // explicitly routed to DLQ
