@@ -13,7 +13,7 @@ This library sends RTTM protobuf events (trade, DLQ, queue metric, error) over K
 <dependency>
     <groupId>io.github.pms-orgs</groupId>
     <artifactId>pms-rttm-client</artifactId>
-    <version>2.2.0</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
